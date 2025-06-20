@@ -1,0 +1,11 @@
+field_name,field_description
+EDIPI (DoD ID),"The EDIPI must be a unique, 10-digit numeric value and is required for every record."
+SSN,"The SSN must be a unique, 9-digit number in the format ###-##-####. This field is mandatory, and test or dummy values are not allowed."
+"Name (First, Last, Middle)","The full legal name is required. Each part (first, last, middle) must be alphabetic (letters only), can include hyphens or apostrophes, and must not exceed 100 characters."
+Date of Birth,"The date of birth is mandatory, must be in the past, and should result in an age of at least 18 years as of today."
+Gender,"The gender field is required and should contain one of the following values: M, F, X, or U (Unknown)."
+Pay Grade,"The pay grade is required and must match the valid codes used in the organization (such as E1-E9, O1-O10, W1-W5), and must not exceed 4 characters."
+Unit,"The unit must be specified, must not exceed 50 characters, and must exist in the master list of units."
+Email Address,"The email address is required, must be unique, must not exceed 100 characters, and must follow a valid email format."
+Phone Number,"The phone number is optional. If provided, it must be between 10 and 15 digits, numeric, and may include a plus (+) sign."
+Effective Date,The effective date is required. It must be formatted as YYYY-MM-DD and should not be earlier than the hire date or later than today's date.

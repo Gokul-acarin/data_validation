@@ -1,0 +1,13 @@
+field_name,faker_provider,parameters,validation_rules
+EDIPI (DoD ID),random_number,"{""digits"": 10}",10-digit numeric identifier
+SSN,ssn,,9-digit SSN format ###-##-####
+First Name,first_name,,Alphabetic first name
+Last Name,last_name,,Alphabetic last name
+Middle Name,first_name,,Alphabetic middle name
+Date of Birth,date_of_birth,"{""minimum_age"": 18, ""maximum_age"": 100}",Date of birth in the past resulting in age >= 18
+Gender,random_element,"{""elements"": [""M"", ""F"", ""X"", ""U""]}","M, F, X, or U"
+Pay Grade,lexify,"{""text"": ""??#""}",Valid pay grade format
+Unit,catch_phrase,,Unit name
+Email Address,email,,Valid email format
+Phone Number,phone_number,,Numeric phone number
+Effective Date,date_between,"{""start_date"": ""today"", ""end_date"": ""+1y"", ""date_format"": ""YYYY-MM-DD""}",Date between today and a year from now
