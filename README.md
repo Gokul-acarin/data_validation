@@ -1,20 +1,25 @@
 # Data Validation Rule Generator
 
-A Python tool that parses validation rules from text files and generates SQL INSERT statements for data validation using LLM providers (OpenAI and Anthropic).
+A Python tool that parses validation rules from text files and generates SQL INSERT statements for data validation using multiple LLM providers (OpenAI, Anthropic, Google Gemini, and Azure OpenAI).
 
 ## Features
 
-- **LLM-Powered Rule Generation**: Uses OpenAI GPT or Anthropic Claude to intelligently generate validation rules based on field descriptions
-- **Comprehensive Validation Schema**: Supports multiple rule types including NOT_NULL, REGEX_MATCH, FIXED_VALUE, DATE_NOT_FUTURE, LIST_MATCH, RANGE_CHECK, LENGTH_CHECK, LIST_TABLE_MATCH
+- **Multi-LLM Support**: Uses OpenAI GPT, Anthropic Claude, Google Gemini, or Azure OpenAI for intelligent rule generation
+- **Intelligent Field Extraction**: Automatically extracts field information from narrative text using LLM
+- **Comprehensive Validation Schema**: Supports multiple rule types including NOT_NULL_CHECK, REGEX_VALIDATION, and more
 - **Flexible Action Types**: Rules can FLAG, CORRECT, or REJECT invalid data
 - **Type-Safe Implementation**: Proper type annotations and runtime checks for robust operation
 - **Environment Variable Support**: Load API keys from `.env` file
 - **Deduplication**: Automatically removes redundant rules to optimize token usage
+- **Deterministic Mode**: Option for consistent rule generation across runs
+- **Provider Agnostic**: Easy switching between different LLM providers
 
 ## Supported LLM Providers
 
 - **OpenAI**: GPT-3.5-turbo, GPT-4, and other OpenAI models
 - **Anthropic**: Claude models (claude-3-haiku, claude-3-sonnet, etc.)
+- **Google Gemini**: Gemini Pro and other Google AI models
+- **Azure OpenAI**: Azure-hosted OpenAI models
 
 ## Installation
 
@@ -68,8 +73,8 @@ python validation_rule_generator.py \
 
 ### Command Line Options
 
-- `--provider`: LLM provider (openai, anthropic) - default: openai
-- `--model`: Model name to use (defaults to gpt-3.5-turbo for OpenAI, claude-3-haiku-20240307 for Anthropic)
+- `--provider`: LLM provider (openai, anthropic, google, azure) - default: openai
+- `--model`: Model name to use (defaults vary by provider)
 - `--api-key`: API key (optional if set in .env file)
 - `--temperature`: Temperature for LLM generation (default: 0.1)
 - `--max-tokens`: Maximum tokens for LLM generation (default: 1000)
@@ -77,17 +82,77 @@ python validation_rule_generator.py \
 - `--output-file`: Output SQL file (default: generated_validation_rules.sql)
 - `--table-name`: Target table name for INSERT statements (default: validation_rules)
 
+## Programmatic Usage
+
+### Basic Example
+
+```python
+from validation_rule_generator import ValidationRuleGenerator, LLMConfig
+
+# Configure LLM
+config = LLMConfig(
+    provider="openai",
+    model="gpt-4",
+    temperature=0.1
+)
+
+# Create generator
+generator = ValidationRuleGenerator(llm_config=config)
+
+# Generate SQL statements
+sql_statements = generator.process_validation_rules("config/validation_rules.txt")
+
+# Print results
+for statement in sql_statements:
+    print(statement)
+```
+
+### Multi-Provider Comparison
+
+```python
+from validation_rule_generator import ValidationRuleGenerator, LLMConfig
+
+providers = [
+    ("OpenAI", "openai", "gpt-4"),
+    ("Anthropic", "anthropic", "claude-3-sonnet-20240229"),
+    ("Google", "google", "gemini-pro")
+]
+
+for name, provider, model in providers:
+    config = LLMConfig(provider=provider, model=model)
+    generator = ValidationRuleGenerator(llm_config=config)
+    sql_statements = generator.process_validation_rules("config/validation_rules.txt")
+    print(f"{name}: Generated {len(sql_statements)} rules")
+```
+
 ## Input Format
 
-The tool expects a text file with field descriptions in the following format:
+The tool supports two input formats:
+
+### Simple Format (config/validation_rules.txt)
 
 ```
-EDIPI (Electronic Data Interchange Personal Identifier): A unique 10-digit identifier assigned to each military service member. Must be numeric and exactly 10 digits long.
+EDIPI (DoD ID):
+The EDIPI must be a unique, 10-digit numeric value and is required for every record.
 
-RANK: Military rank of the service member. Must be one of the valid ranks in the military hierarchy.
+SSN:
+The SSN must be a unique, 9-digit number in the format ###-##-####. This field is mandatory, and test or dummy values are not allowed.
 
-NAME: Full name of the service member. Must be non-empty and contain only letters, spaces, and hyphens.
+Name (First, Last, Middle):
+The full legal name is required. Each part (first, last, middle) must be alphabetic (letters only), can include hyphens or apostrophes, and must not exceed 100 characters.
 ```
+
+### Complex Format (config/validation_rules_complex.txt)
+
+```
+Each record needs to have a unique EDIPI, which is a 10-digit number used as the DoD ID. It's a must for every entry.
+
+The SSN also needs to be unique and exactly 9 digits long, written in the standard format like 123-45-6789. This field can't be left blank, and using fake or placeholder numbers isn't allowed.
+
+When entering someone's name, all three parts—first, middle, and last—should be included. They should only contain letters, though it's okay to use hyphens or apostrophes. Just make sure no part of the name goes over 100 characters.
+```
+
+The LLM automatically extracts field information from both formats and generates appropriate validation rules.
 
 ## Output
 
@@ -96,7 +161,7 @@ The tool generates SQL INSERT statements for a validation rules table with the f
 ```sql
 -- Generated Validation Rules SQL Statements
 -- Generated on: 2024-01-15 10:30:00
--- Generated using OPENAI gpt-3.5-turbo for intelligent rule creation
+-- Generated using OPENAI gpt-4 for intelligent rule creation
 -- Target table: validation_rules
 
 INSERT INTO validation_rules (
@@ -104,7 +169,7 @@ INSERT INTO validation_rules (
   compare_column_or_table, explode_flag, threshold, expression_template, 
   action_type, is_enabled, priority, rule_category, created_date, updated_date
 ) VALUES (
-  1, 'edipi_required', 'edipi', 'NOT_NULL', NULL,
+  1, 'edipi_required', 'edipi', 'NOT_NULL_CHECK', NULL,
   NULL, false, NULL, 'edipi IS NULL', 'REJECT', true, 1, 'validation', 
   current_timestamp(), current_timestamp()
 );
@@ -114,33 +179,9 @@ INSERT INTO validation_rules (
   compare_column_or_table, explode_flag, threshold, expression_template, 
   action_type, is_enabled, priority, rule_category, created_date, updated_date
 ) VALUES (
-  2, 'edipi_numeric_format', 'edipi', 'REGEX_MATCH', '^[0-9]{10}$',
+  2, 'edipi_numeric_format', 'edipi', 'REGEX_VALIDATION', '^[0-9]{10}$',
   NULL, false, NULL, 'edipi NOT RLIKE \'^[0-9]{10}$\'', 'REJECT', true, 1, 'validation', 
   current_timestamp(), current_timestamp()
-);
-```
-
-## Database Schema
-
-The generated SQL statements are designed for a table with the following structure:
-
-```sql
-CREATE TABLE validation_rules (
-  rule_id INT PRIMARY KEY,
-  rule_name VARCHAR(255) NOT NULL,
-  source_column VARCHAR(255) NOT NULL,
-  rule_type VARCHAR(50) NOT NULL,
-  rule_condition TEXT,
-  compare_column_or_table VARCHAR(255),
-  explode_flag BOOLEAN DEFAULT FALSE,
-  threshold INT,
-  expression_template TEXT,
-  action_type VARCHAR(20) DEFAULT 'FLAG',
-  is_enabled BOOLEAN DEFAULT TRUE,
-  priority INT DEFAULT 1,
-  rule_category VARCHAR(50) DEFAULT 'validation',
-  created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 ```
 
@@ -154,6 +195,13 @@ OPENAI_API_KEY=sk-your-openai-key
 
 # Anthropic (optional)
 ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
+
+# Google Gemini (optional)
+GOOGLE_API_KEY=your-google-api-key
+
+# Azure OpenAI (optional)
+AZURE_OPENAI_API_KEY=your-azure-openai-key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 ```
 
 ## Examples
@@ -161,11 +209,14 @@ ANTHROPIC_API_KEY=sk-ant-your-anthropic-key
 ### Example Usage
 
 ```bash
-# Generate rules using OpenAI GPT-3.5-turbo
-python validation_rule_generator.py
+# Generate rules using OpenAI GPT-4
+python validation_rule_generator.py --provider openai --model gpt-4
 
 # Generate rules using Anthropic Claude
-python validation_rule_generator.py --provider anthropic --model claude-3-haiku-20240307
+python validation_rule_generator.py --provider anthropic --model claude-3-sonnet-20240229
+
+# Generate rules using Google Gemini
+python validation_rule_generator.py --provider google --model gemini-pro
 
 # Custom input and output files
 python validation_rule_generator.py --input-file my_rules.txt --output-file custom_rules.sql
@@ -174,16 +225,11 @@ python validation_rule_generator.py --input-file my_rules.txt --output-file cust
 python validation_rule_generator.py --table-name my_validation_rules
 ```
 
-### Example Input File (config/validation_rules.txt)
+### Running Examples
 
-```
-EMAIL: Email address of the user. Must be a valid email format and not empty.
-
-PHONE: Phone number in international format. Must start with + and contain only digits and hyphens.
-
-AGE: Age of the person. Must be between 18 and 120 years old.
-
-STATUS: Account status. Must be one of: active, inactive, suspended, pending.
+```bash
+# Run the example script to see different providers in action
+python example_usage.py
 ```
 
 ## Error Handling
@@ -195,19 +241,29 @@ The tool includes comprehensive error handling for:
 - File I/O errors
 - JSON parsing errors
 - Type safety violations
+- Network connectivity issues
 
 ## Recent Updates
 
+- **Multi-LLM Support**: Added support for Google Gemini and Azure OpenAI
+- **Enhanced Field Extraction**: LLM-powered extraction of field information from narrative text
+- **Deterministic Mode**: Option for consistent rule generation across runs
 - **Type Safety**: Added proper type annotations and runtime checks for robust operation
 - **Client Validation**: Runtime checks ensure correct LLM client types are used
 - **Token Optimization**: Automatic deduplication of redundant rules
 - **Enhanced Error Messages**: More descriptive error messages for debugging
+- **Flexible Input Formats**: Support for both structured and narrative input formats
 
 ## Dependencies
 
 - `openai`: OpenAI API client
 - `python-dotenv`: Environment variable loading
-- `anthropic`: Anthropic Claude API client (optional)
+- `anthropic`: Anthropic Claude API client
+- `google-generativeai`: Google Gemini API client
+- `pandas`: Data manipulation and analysis
+- `faker`: Test data generation
+- `requests`: HTTP library for API calls
+- `beautifulsoup4`: HTML/XML parsing
 
 ## License
 
