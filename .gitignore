@@ -55,3 +55,6 @@ output/analysis/*
 
 # Environment variables
 .env
+
+# outfile
+generated_validation_rules.sql
