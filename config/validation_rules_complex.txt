@@ -1,0 +1,19 @@
+Each record needs to have a unique EDIPI, which is a 10-digit number used as the DoD ID. It’s a must for every entry.
+
+The SSN also needs to be unique and exactly 9 digits long, written in the standard format like 123-45-6789. This field can’t be left blank, and using fake or placeholder numbers isn’t allowed.
+
+When entering someone’s name, all three parts—first, middle, and last—should be included. They should only contain letters, though it’s okay to use hyphens or apostrophes. Just make sure no part of the name goes over 100 characters.
+
+The date of birth is required too. It needs to be a valid date in the past, and the person should be at least 18 years old as of today.
+
+For gender, one of these values should be selected: M for male, F for female, X for non-binary, or U if it’s unknown. This field can’t be left blank.
+
+You’ll also need to provide the person’s pay grade. It has to match the organization’s official codes like E1 to E9, O1 to O10, or W1 to W5, and it shouldn’t be more than 4 characters long.
+
+Every person must be assigned to a unit. The unit name should be accurate, not longer than 50 characters, and must already exist in the approved list.
+
+The email address is required as well. It must be a valid email, unique for each person, and no longer than 100 characters.
+
+Providing a phone number is optional, but if you do include one, make sure it’s between 10 and 15 digits and only contains numbers (a plus sign at the beginning is okay too).
+
+Lastly, the effective date needs to be filled in. It should follow the format of year-month-day (like 2025-06-24), and it can’t be before the hire date or later than today.
